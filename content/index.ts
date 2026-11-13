@@ -1,8 +1,13 @@
 import type { Curriculum, Item, Module, Phase, QuizCard } from "./types";
 import * as p00 from "./phases/00-base-camp";
 import * as p01 from "./phases/01-processes";
+import * as p02 from "./phases/02-runtimes";
+import * as p03 from "./phases/03-memory";
+import * as p04 from "./phases/04-storage";
+import * as p05 from "./phases/05-networking";
+import * as p06 from "./phases/06-isolation";
 
-const sources = [p00, p01];
+const sources = [p00, p01, p02, p03, p04, p05, p06];
 
 export const curriculum: Curriculum = {
   totalWeeks: 52,
