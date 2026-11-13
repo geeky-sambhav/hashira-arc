@@ -40,7 +40,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <TooltipProvider delayDuration={200}>
             <AppHeader />
             <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-8 pb-28 sm:px-6 md:pb-16">{children}</main>
-            <Toaster position="top-center" />
+            {/* Sits just below the sticky header so it never covers the navigation. */}
+            <Toaster position="top-center" offset={68} mobileOffset={68} />
           </TooltipProvider>
         </ThemeProvider>
       </body>

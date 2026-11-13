@@ -3,8 +3,7 @@
 import { refresh } from "next/cache";
 import { itemById, phaseById } from "@/content";
 import { db } from "@/lib/db/client";
-import { diffDays, isValidDate } from "@/lib/dates";
-import { getToday } from "@/lib/db/settings";
+import { isValidDate } from "@/lib/dates";
 import { NOTE_MAX, failure, type ActionResult } from "./types";
 
 export interface TimeLogInput {
@@ -32,11 +31,14 @@ export async function logTime(input: TimeLogInput): Promise<ActionResult> {
   if (note.length > NOTE_MAX) return { ok: false, error: `Keep the note under ${NOTE_MAX} characters.` };
 
   try {
-    const today = await getToday();
-    if (diffDays(today, input.loggedOn) > 1) return { ok: false, error: "That date is in the future." };
-    await db()`
+    // One statement: the date check uses the user's time zone and happens in the insert itself.
+    const inserted = await db()`
       insert into time_log (logged_on, minutes, phase_id, item_id, note)
-      values (${input.loggedOn}::date, ${minutes}, ${phaseId}, ${itemEntry?.item.id ?? null}, ${note || null})`;
+      select ${input.loggedOn}::date, ${minutes}, ${phaseId}, ${itemEntry?.item.id ?? null}, ${note || null}
+      from app_settings s
+      where ${input.loggedOn}::date <= (now() at time zone s.time_zone)::date + 1
+      returning id`;
+    if (inserted.length === 0) return { ok: false, error: "That date is in the future." };
   } catch (error) {
     return failure(error);
   }

@@ -6,7 +6,7 @@ import { ProgressBar } from "@/components/progress-bar";
 import { ItemRow } from "@/components/roadmap/item-row";
 import { phaseProgress } from "@/components/roadmap/live";
 import { Button } from "@/components/ui/button";
-import { addDays, formatDay, startOfWeek, weekdayShort } from "@/lib/dates";
+import { formatDay, weekdayShort } from "@/lib/dates";
 import { getActiveDays } from "@/lib/db/cards";
 import { getPlan } from "@/lib/db/plan";
 import { getProgressMap } from "@/lib/db/progress";
@@ -161,7 +161,7 @@ const Small = ({ children }: { children: React.ReactNode }) => (
 
 export async function HoursTile() {
   const { today, settings } = await getPlan();
-  const byDay = await getMinutesByDay(startOfWeek(today));
+  const byDay = await getMinutesByDay();
   const days = weekDays(byDay, today);
   const total = days.reduce((sum, d) => sum + d.minutes, 0);
   const peak = Math.max(60, ...days.map((d) => d.minutes));
@@ -203,7 +203,7 @@ export async function HoursTile() {
 
 export async function StreakTile() {
   const { today } = await getPlan();
-  const active = await getActiveDays(addDays(today, -400));
+  const active = await getActiveDays();
   const n = streak(active, today);
   const doneToday = active.includes(today);
   return (

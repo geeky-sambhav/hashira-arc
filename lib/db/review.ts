@@ -4,9 +4,7 @@ import { curriculum, phases } from "@/content";
 import type { QuizCard } from "@/content/types";
 import { buildQueue, type Queue } from "@/lib/review-queue";
 import type { CardSchedule } from "@/lib/srs";
-import { getCardStates, getIntroducedCount } from "./cards";
-import { getProgressMap } from "./progress";
-import { getSettings, getToday } from "./settings";
+import { getSnapshot } from "./snapshot";
 
 export interface ReviewData {
   today: string;
@@ -22,13 +20,8 @@ export interface ReviewData {
 }
 
 export const getReviewData = cache(async (): Promise<ReviewData> => {
-  const [today, settings, states, progress] = await Promise.all([
-    getToday(),
-    getSettings(),
-    getCardStates(),
-    getProgressMap(),
-  ]);
-  const introducedToday = await getIntroducedCount(today);
+  const { today, settings, cards: states, progress } = await getSnapshot();
+  const introducedToday = states.filter((s) => s.introducedOn === today).length;
 
   const startedModuleIds = new Set<string>();
   for (const phase of phases) {

@@ -13,8 +13,9 @@ export function db(): Sql {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set. Copy .env.example to .env.local and fill it in.");
   store.__hashiraSql = postgres(url, {
-    max: process.env.VERCEL ? 1 : 5,
-    idle_timeout: 20,
+    max: process.env.VERCEL ? 1 : 3,
+    // Opening a connection costs several round trips, so keep idle ones around.
+    idle_timeout: process.env.VERCEL ? 20 : 300,
     connect_timeout: 10,
     // Supabase's transaction pooler (port 6543) does not support prepared statements.
     prepare: new URL(url).port !== "6543",

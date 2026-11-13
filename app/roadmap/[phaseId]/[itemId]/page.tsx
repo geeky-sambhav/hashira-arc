@@ -9,9 +9,8 @@ import { Skeleton } from "@/components/progress-bar";
 import { EvidenceBoard } from "@/components/roadmap/evidence-board";
 import { formatItemHours, kindMeta } from "@/components/roadmap/kind";
 import { LiveItemStatusSegmented } from "@/components/roadmap/live";
-import { getEvidenceForItem } from "@/lib/db/evidence";
+import { getItemState } from "@/lib/db/evidence";
 import { getToday } from "@/lib/db/settings";
-import { getMinutesForItem } from "@/lib/db/time-log";
 import { formatHours } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 
@@ -37,19 +36,13 @@ export default function ItemPage({ params }: PageProps<"/roadmap/[phaseId]/[item
 }
 
 async function Evidence({ entry }: { entry: ItemEntry }) {
-  const rows = await getEvidenceForItem(entry.item.id);
+  const { evidence } = await getItemState(entry.item.id);
   const specs = entry.item.kind === "reading" ? [] : entry.item.evidence;
-  return (
-    <EvidenceBoard
-      itemId={entry.item.id}
-      specs={specs}
-      entries={rows.map(({ id, checklistId, kind, body, url, createdAt }) => ({ id, checklistId, kind, body, url, createdAt }))}
-    />
-  );
+  return <EvidenceBoard itemId={entry.item.id} specs={specs} entries={evidence} />;
 }
 
 async function TimeOnItem({ itemId }: { itemId: string }) {
-  const [minutes, today] = await Promise.all([getMinutesForItem(itemId), getToday()]);
+  const [{ minutes }, today] = await Promise.all([getItemState(itemId), getToday()]);
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">

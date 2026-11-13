@@ -30,7 +30,7 @@ async function Form() {
 async function ThisWeek() {
   const { today, settings } = await getPlan();
   const monday = startOfWeek(today);
-  const byDay = await getMinutesByDay(addDays(monday, -7 * (HISTORY_WEEKS - 1)));
+  const byDay = await getMinutesByDay();
   const days = weekDays(byDay, today);
   const total = days.reduce((s, d) => s + d.minutes, 0);
   const target = settings.weeklyTargetMinutes;
