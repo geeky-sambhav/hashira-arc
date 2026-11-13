@@ -6,8 +6,13 @@ import * as p03 from "./phases/03-memory";
 import * as p04 from "./phases/04-storage";
 import * as p05 from "./phases/05-networking";
 import * as p06 from "./phases/06-isolation";
+import * as p07 from "./phases/07-virtualization";
+import * as c1 from "./phases/08-capstone-migration";
+import * as p08 from "./phases/09-data";
+import * as p09 from "./phases/10-distributed";
+import { buffer1 } from "./phases/buffers";
 
-const sources = [p00, p01, p02, p03, p04, p05, p06];
+const sources = [p00, p01, p02, p03, p04, p05, p06, p07, c1, buffer1, p08, p09];
 
 export const curriculum: Curriculum = {
   totalWeeks: 52,
