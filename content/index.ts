@@ -10,9 +10,14 @@ import * as p07 from "./phases/07-virtualization";
 import * as c1 from "./phases/08-capstone-migration";
 import * as p08 from "./phases/09-data";
 import * as p09 from "./phases/10-distributed";
-import { buffer1 } from "./phases/buffers";
+import * as p10 from "./phases/11-reliability";
+import * as p11 from "./phases/12-kubernetes";
+import * as c2 from "./phases/13-capstone-platform";
+import * as p12 from "./phases/14-inference";
+import * as p13 from "./phases/15-voice";
+import { buffer1, buffer2 } from "./phases/buffers";
 
-const sources = [p00, p01, p02, p03, p04, p05, p06, p07, c1, buffer1, p08, p09];
+const sources = [p00, p01, p02, p03, p04, p05, p06, p07, c1, buffer1, p08, p09, buffer2, p10, p11, c2, p12, p13];
 
 export const curriculum: Curriculum = {
   totalWeeks: 52,
