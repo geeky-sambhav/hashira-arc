@@ -135,7 +135,7 @@ export const phase: Phase = {
           links: [
             link(
               "The Log: what every software engineer should know",
-              "https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying",
+              "https://www.linkedin.com/blog/engineering/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying",
             ),
             link("Kafka design", "https://kafka.apache.org/documentation/#design"),
           ],

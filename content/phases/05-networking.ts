@@ -231,11 +231,13 @@ export const phase: Phase = {
         read("net-lb", "Modern load balancing and proxying", {
           week: 19,
           hours: 2.5,
-          source: "Matt Klein (Envoy)",
+          source: "Sam Rose; Envoy documentation",
+          chapters: "The visual explainer first, then Envoy's overview of load balancing policies and health checking",
           links: [
+            link("Load balancing, visually explained", "https://samwho.dev/load-balancing/"),
             link(
-              "Introduction to modern network load balancing and proxying",
-              "https://blog.envoyproxy.io/introduction-to-modern-network-load-balancing-and-proxying-a57f6ff80236",
+              "Envoy: load balancing overview",
+              "https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/overview",
             ),
           ],
         }),

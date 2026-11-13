@@ -24,9 +24,9 @@ export const phase: Phase = {
         read("inf-handbook", "LLM Inference Handbook", {
           week: 49,
           hours: 5,
-          source: "BentoML",
+          source: "LLM Inference Handbook (Modular, formerly hosted by BentoML)",
           chapters: "Fundamentals, inference metrics (TTFT, TPOT, throughput), batching, the KV cache, quantization",
-          links: [link("LLM Inference Handbook", "https://bentoml.com/llm/")],
+          links: [link("LLM Inference Handbook", "https://handbook.modular.com/")],
         }),
         read("inf-vllm-paper", "PagedAttention: the vLLM paper", {
           week: 49,
