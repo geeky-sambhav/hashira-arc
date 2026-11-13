@@ -128,3 +128,85 @@
     @apply font-sans;
   }
 }
+/* ---- Hashira Arc theme: warm paper by day, ink by night, ember accent ---- */
+
+@theme inline {
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-ember: var(--ember);
+}
+
+:root {
+  --background: oklch(0.985 0.004 85);
+  --foreground: oklch(0.2 0.012 280);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.012 280);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.012 280);
+  --primary: oklch(0.6 0.2 35);
+  --primary-foreground: oklch(0.99 0.01 80);
+  --secondary: oklch(0.955 0.006 85);
+  --secondary-foreground: oklch(0.25 0.012 280);
+  --muted: oklch(0.955 0.006 85);
+  --muted-foreground: oklch(0.5 0.012 280);
+  --accent: oklch(0.955 0.006 85);
+  --accent-foreground: oklch(0.25 0.012 280);
+  --border: oklch(0.91 0.006 85);
+  --input: oklch(0.91 0.006 85);
+  --ring: oklch(0.6 0.2 35);
+  --ember: oklch(0.6 0.2 35);
+  --success: oklch(0.58 0.14 158);
+  --warning: oklch(0.7 0.15 70);
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: oklch(0.155 0.008 280);
+  --foreground: oklch(0.96 0.005 85);
+  --card: oklch(0.195 0.01 280);
+  --card-foreground: oklch(0.96 0.005 85);
+  --popover: oklch(0.215 0.011 280);
+  --popover-foreground: oklch(0.96 0.005 85);
+  --primary: oklch(0.72 0.17 42);
+  --primary-foreground: oklch(0.17 0.02 40);
+  --secondary: oklch(0.25 0.011 280);
+  --secondary-foreground: oklch(0.96 0.005 85);
+  --muted: oklch(0.25 0.011 280);
+  --muted-foreground: oklch(0.7 0.012 280);
+  --accent: oklch(0.25 0.011 280);
+  --accent-foreground: oklch(0.96 0.005 85);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.72 0.17 42);
+  --ember: oklch(0.72 0.17 42);
+  --success: oklch(0.74 0.15 160);
+  --warning: oklch(0.8 0.14 78);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--ember) 30%, transparent);
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
