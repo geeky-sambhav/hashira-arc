@@ -1,20 +1,20 @@
 /**
- * Requests every resource link in the curriculum and reports the ones that fail.
+ * Requests every resource link in the sheet and reports the ones that fail.
  * Run with: bun scripts/check-links.ts
  *
  * Some sites refuse automated requests (403/429); those are listed separately
  * as "blocked" because they usually work in a browser.
  */
-import { allItems } from "../content/index";
+import { nodeById } from "../content/index";
 
 const UA = "Mozilla/5.0 (compatible; curriculum-link-check/1.0)";
 const CONCURRENCY = 8;
 const TIMEOUT_MS = 20_000;
 
 const urls = new Map<string, string[]>();
-for (const { item } of allItems) {
-  for (const l of item.links ?? []) {
-    urls.set(l.url, [...(urls.get(l.url) ?? []), item.id]);
+for (const { node } of nodeById.values()) {
+  for (const l of node.links ?? []) {
+    urls.set(l.url, [...(urls.get(l.url) ?? []), node.id]);
   }
 }
 
