@@ -1,102 +1,88 @@
-import { describe, expect, test } from "bun:test";
-import { curriculum } from "./index";
-import type { Curriculum, Phase } from "./types";
-import { validateCurriculum } from "./validate";
+import { expect, test } from "bun:test";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { build, concept, section, topic } from "./dsl";
+import { leafIds, nodeById, sections, totalLeaves } from "./index";
+import { ID_MAX_LENGTH, ID_PATTERN } from "./types";
+import { validateSheet } from "./validate";
 
-const COMPLETE = curriculum.phases.at(-1)?.weeks.end === curriculum.totalWeeks;
-
-describe("curriculum", () => {
-  const report = validateCurriculum(curriculum);
-
-  test("has no validation errors", () => {
-    // While the curriculum is still being authored the only tolerated error is week coverage.
-    const errors = COMPLETE
-      ? report.errors
-      : report.errors.filter((e) => !e.startsWith("phases cover weeks") && !e.endsWith("no required work planned"));
-    expect(errors).toEqual([]);
-  });
-
-  test("prints its size", () => {
-    const { stats } = report;
-    console.log(
-      `${stats.phases} phases, ${stats.modules} modules, ${stats.items} items, ${stats.cards} cards, ` +
-        `${stats.requiredHours}h required + ${stats.optionalHours}h optional`,
-    );
-    expect(stats.items).toBeGreaterThan(0);
-  });
+test("the sheet has no validation errors", () => {
+  const { errors, stats } = validateSheet(sections);
+  console.log(
+    `sheet: ${stats.sections} sections, ${stats.groups} groups, ${stats.concepts} concept rows, ` +
+      `${stats.builds} build rows, ${stats.links} links, depth ${stats.maxDepth}`,
+  );
+  expect(errors).toEqual([]);
 });
 
-describe("validateCurriculum catches mistakes", () => {
-  const phase = (over: Partial<Phase> = {}): Phase => ({
-    id: "p",
-    label: "Phase",
-    title: "T",
-    summary: "S",
-    weeks: { start: 1, end: 48 },
-    modules: [
-      {
-        id: "m",
-        title: "M",
-        items: Array.from({ length: 48 }, (_, i) => ({
-          kind: "reading" as const,
-          id: `item-${i + 1}`,
-          title: "Read",
-          week: i + 1,
-          estHours: 5,
-          source: "Book",
-          links: [{ label: "Book", url: "https://example.com/book" }],
-        })),
-      },
-    ],
-    ...over,
-  });
-  const make = (over: Partial<Curriculum> = {}): Curriculum => ({
-    totalWeeks: 48,
-    weeklyHoursBudget: 25,
-    phases: [phase()],
-    cards: [],
-    retiredIds: [],
-    ...over,
-  });
+test("the indexes agree with the tree", () => {
+  const { stats } = validateSheet(sections);
+  expect(leafIds.size).toBe(stats.leaves);
+  expect(totalLeaves).toBe(stats.leaves);
+  expect(nodeById.size).toBe(stats.leaves + stats.groups);
+  for (const id of leafIds) expect(nodeById.get(id)?.node.children).toBeUndefined();
+});
 
-  test("a clean fixture passes", () => {
-    expect(validateCurriculum(make()).errors).toEqual([]);
-  });
+test("every section file is part of the sheet", () => {
+  const files = readdirSync(join(import.meta.dir, "sections")).filter((f) => f.endsWith(".ts"));
+  expect(sections.length).toBe(files.length);
+});
 
-  test("duplicate IDs", () => {
-    const p = phase();
-    const dup = { ...p.modules[0], items: [...p.modules[0].items, { ...p.modules[0].items[0] }] };
-    const { errors } = validateCurriculum(make({ phases: [{ ...p, modules: [dup] }] }));
-    expect(errors.some((e) => e.includes("already used"))).toBe(true);
-  });
+test("the database CHECK constraint matches the ID rules", () => {
+  const dir = join(import.meta.dir, "..", "supabase", "migrations");
+  const file = readdirSync(dir).find((f) => f.endsWith("_sheet_state.sql"));
+  const migration = readFileSync(join(dir, file ?? ""), "utf8");
+  expect(migration).toContain(`node_id ~ '${ID_PATTERN.source}'`);
+  expect(migration).toContain(`length(node_id) <= ${ID_MAX_LENGTH}`);
+});
 
-  test("bad links", () => {
-    const p = phase();
-    const items = p.modules[0].items.map((it, i) =>
-      i === 0 ? { ...it, links: [{ label: "x", url: "http://insecure.example.com" }] } : it,
-    );
-    const { errors } = validateCurriculum(make({ phases: [{ ...p, modules: [{ ...p.modules[0], items }] }] }));
-    expect(errors.some((e) => e.includes("is not https"))).toBe(true);
-  });
+const sample = (children: Parameters<typeof section>[2]) =>
+  validateSheet([section("demo", { title: "Demo", summary: "A demo." }, children)]).errors;
 
-  test("a week with no work, and an item outside its phase", () => {
-    const p = phase();
-    const items = p.modules[0].items.map((it, i) => (i === 4 ? { ...it, week: 60 } : it));
-    const { errors } = validateCurriculum(make({ phases: [{ ...p, modules: [{ ...p.modules[0], items }] }] }));
-    expect(errors.some((e) => e.includes("week 5: no required work"))).toBe(true);
-    expect(errors.some((e) => e.includes("outside its phase"))).toBe(true);
-  });
+test("a well-formed section passes", () => {
+  expect(
+    sample([
+      topic("basics", "Basics", [
+        concept("one", "First idea", "What it means."),
+        concept("two", "Second idea", undefined, {
+          parts: [concept("a", "Part A", "Detail."), concept("b", "Part B", "Detail.")],
+        }),
+        build("lab", "Make it", "Build the thing.", { doneWhen: ["It runs"] }),
+      ]),
+    ]),
+  ).toEqual([]);
+});
 
-  test("gaps between phases, retired IDs and orphan cards", () => {
-    const { errors } = validateCurriculum(
-      make({
-        phases: [phase({ weeks: { start: 2, end: 48 } })],
-        retiredIds: ["m"],
-        cards: [{ id: "c-q1", moduleId: "nope", question: "Q?", answer: "A" }],
-      }),
-    );
-    expect(errors.some((e) => e.includes("starts at week 2"))).toBe(true);
-    expect(errors.some((e) => e.includes("retired"))).toBe(true);
-    expect(errors.some((e) => e.includes("unknown module"))).toBe(true);
-  });
+test("IDs are resolved as dotted paths and leaves are counted", () => {
+  const s = section("demo", { title: "Demo", summary: "A demo." }, [
+    topic("basics", "Basics", [
+      concept("one", "First", "x"),
+      concept("two", "Second", undefined, { parts: [concept("a", "A", "x"), concept("b", "B", "x")] }),
+    ]),
+  ]);
+  expect(s.leaves).toBe(3);
+  expect(s.children[0].id).toBe("demo.basics");
+  expect(s.children[0].children?.[1].children?.[1].id).toBe("demo.basics.two.b");
+  expect(s.children[0].children?.[1].leaves).toBe(2);
+});
+
+test("the validator catches authoring mistakes", () => {
+  expect(sample([topic("empty", "Empty", [])]).join()).toContain("needs rows under it");
+  expect(sample([topic("t", "T", [concept("no-detail", "No detail")])]).join()).toContain("needs a detail");
+  expect(sample([topic("t", "T", [concept("Bad_ID", "Bad", "x")])]).join()).toContain("kebab-case");
+  expect(
+    sample([topic("t", "T", [concept("a", "Same", "x"), concept("b", "Same", "x")])]).join(),
+  ).toContain('both titled "Same"');
+  expect(sample([topic("t", "T", [concept("a", "A", "x"), concept("a", "B", "x")])]).join()).toContain(
+    "ID already used",
+  );
+  expect(
+    sample([topic("t", "T", [concept("a", "A", undefined, { parts: [concept("only", "Only", "x")] })])]).join(),
+  ).toContain("at least two parts");
+  expect(
+    sample([
+      topic("t", "T", [concept("a", "A", "x", { links: [{ label: "Insecure", url: "http://example.com" }] })]),
+    ]).join(),
+  ).toContain("is not https");
+  expect(sample([concept("loose", "Loose row", "x")]).join()).toContain("must be topics");
 });

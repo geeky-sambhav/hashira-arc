@@ -1,67 +1,66 @@
-import type { Curriculum, Item, Module, Phase, QuizCard } from "./types";
-import * as p00 from "./phases/00-base-camp";
-import * as p01 from "./phases/01-processes";
-import * as p02 from "./phases/02-runtimes";
-import * as p03 from "./phases/03-memory";
-import * as p04 from "./phases/04-storage";
-import * as p05 from "./phases/05-networking";
-import * as p06 from "./phases/06-isolation";
-import * as p07 from "./phases/07-virtualization";
-import * as c1 from "./phases/08-capstone-migration";
-import * as p08 from "./phases/09-data";
-import * as p09 from "./phases/10-distributed";
-import * as p10 from "./phases/11-reliability";
-import * as p11 from "./phases/12-kubernetes";
-import * as c2 from "./phases/13-capstone-platform";
-import * as p12 from "./phases/14-inference";
-import * as p13 from "./phases/15-voice";
-import { buffer1, buffer2 } from "./phases/buffers";
+import type { Section, SheetNode } from "./types";
+import baseCamp from "./sections/01-base-camp";
+import processes from "./sections/02-processes";
+import runtimes from "./sections/03-runtimes";
+import memory from "./sections/04-memory";
+import storage from "./sections/05-storage";
+import networking from "./sections/06-networking";
+import isolation from "./sections/07-isolation";
+import virtualization from "./sections/08-virtualization";
+import capstoneMigration from "./sections/09-capstone-migration";
+import data from "./sections/10-data";
+import distributed from "./sections/11-distributed";
+import reliability from "./sections/12-reliability";
+import kubernetes from "./sections/13-kubernetes";
+import capstonePlatform from "./sections/14-capstone-platform";
+import inference from "./sections/15-inference";
+import voice from "./sections/16-voice";
 
-const sources = [p00, p01, p02, p03, p04, p05, p06, p07, c1, buffer1, p08, p09, buffer2, p10, p11, c2, p12, p13];
+/** The sheet, in the order it is meant to be worked through. */
+export const sections: readonly Section[] = [
+  baseCamp,
+  processes,
+  runtimes,
+  memory,
+  storage,
+  networking,
+  isolation,
+  virtualization,
+  capstoneMigration,
+  data,
+  distributed,
+  reliability,
+  kubernetes,
+  capstonePlatform,
+  inference,
+  voice,
+];
 
-export const curriculum: Curriculum = {
-  totalWeeks: 52,
-  weeklyHoursBudget: 25,
-  phases: sources.map((s) => s.phase),
-  cards: sources.flatMap((s) => s.quiz),
-  retiredIds: [],
-};
+export const sectionById: ReadonlyMap<string, Section> = new Map(sections.map((s) => [s.id, s]));
 
-export const phases = curriculum.phases;
-
-export interface ItemEntry {
-  item: Item;
-  module: Module;
-  phase: Phase;
+export interface NodeEntry {
+  node: SheetNode;
+  section: Section;
 }
 
-export const phaseById: ReadonlyMap<string, Phase> = new Map(phases.map((p) => [p.id, p]));
-
-export const moduleById: ReadonlyMap<string, { module: Module; phase: Phase }> = new Map(
-  phases.flatMap((phase) => phase.modules.map((module) => [module.id, { module, phase }] as const)),
-);
-
-export const itemById: ReadonlyMap<string, ItemEntry> = new Map(
-  phases.flatMap((phase) =>
-    phase.modules.flatMap((module) => module.items.map((item) => [item.id, { item, module, phase }] as const)),
-  ),
-);
-
-/** Every item in curriculum order. */
-export const allItems: readonly ItemEntry[] = [...itemById.values()];
-
-export const cardById: ReadonlyMap<string, QuizCard> = new Map(curriculum.cards.map((c) => [c.id, c]));
-
-export function phaseItems(phase: Phase): Item[] {
-  return phase.modules.flatMap((m) => m.items);
+function collect(): { nodes: Map<string, NodeEntry>; leaves: Set<string> } {
+  const nodes = new Map<string, NodeEntry>();
+  const leaves = new Set<string>();
+  const walk = (node: SheetNode, s: Section) => {
+    nodes.set(node.id, { node, section: s });
+    if (node.children?.length) node.children.forEach((child) => walk(child, s));
+    else leaves.add(node.id);
+  };
+  for (const s of sections) s.children.forEach((child) => walk(child, s));
+  return { nodes, leaves };
 }
 
-export function phaseHours(phase: Phase): number {
-  return phaseItems(phase)
-    .filter((i) => !i.optional)
-    .reduce((sum, i) => sum + i.estHours, 0);
-}
+const collected = collect();
 
-export function phaseForWeek(week: number): Phase | undefined {
-  return phases.find((p) => week >= p.weeks.start && week <= p.weeks.end);
-}
+/** Every node in the sheet, groups included. */
+export const nodeById: ReadonlyMap<string, NodeEntry> = collected.nodes;
+
+/** The IDs that carry a checkbox. */
+export const leafIds: ReadonlySet<string> = collected.leaves;
+
+export const totalLeaves = sections.reduce((n, s) => n + s.leaves, 0);
