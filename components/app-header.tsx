@@ -1,43 +1,49 @@
 import Link from "next/link";
-import { Suspense } from "react";
-import { DesktopNav, MobileNav } from "./nav-links";
 import { ThemeToggle } from "./theme";
 
-/** Three rising pillars. */
+/** A single flame. */
 export function Logo({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
-      <rect x="3" y="11" width="4.5" height="10" rx="1.2" opacity="0.45" />
-      <rect x="9.75" y="7" width="4.5" height="14" rx="1.2" opacity="0.7" />
-      <rect x="16.5" y="3" width="4.5" height="18" rx="1.2" />
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <defs>
+        <linearGradient id="logo-flame" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" style={{ stopColor: "var(--ember)" }} />
+          <stop offset="1" style={{ stopColor: "var(--sun)" }} />
+        </linearGradient>
+      </defs>
+      <path
+        fill="url(#logo-flame)"
+        d="M12.4 1.5c.5 3.6 5.6 6 5.6 11.7a6 6 0 0 1-12 0c0-2.3.9-3.9 2.1-5.2.1 1.9.9 3.1 2 3.5-.6-3.8.3-7.3 2.3-10z"
+      />
+      <path
+        fill="var(--background)"
+        opacity="0.55"
+        d="M12 12.5c.2 1.6 2.4 2.5 2.4 4.8a2.4 2.4 0 0 1-4.8 0c0-1.8 1.6-2.7 2.4-4.8z"
+      />
     </svg>
   );
 }
 
 export function AppHeader() {
   return (
-    <>
-      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-6 px-4 sm:px-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2 rounded-md font-heading text-[15px] font-semibold tracking-tight outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <Logo className="size-5 text-primary" />
-            Hashira Arc
-          </Link>
-          {/* usePathname is request data for dynamic routes, so the nav streams in. */}
-          <Suspense fallback={<DesktopNav pathname="" />}>
-            <DesktopNav />
-          </Suspense>
-          <div className="ml-auto">
-            <ThemeToggle />
-          </div>
+    <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 w-full max-w-4xl items-center gap-6 px-4 sm:px-6">
+        <Link
+          href="/"
+          className="flex items-center gap-2 rounded-md font-heading text-lg font-extrabold tracking-tight outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <Logo className="size-6" />
+          Hashira Arc
+          <span aria-hidden="true" className="hidden text-sm font-semibold text-muted-foreground sm:inline">
+            柱
+          </span>
+        </Link>
+        <div className="ml-auto">
+          <ThemeToggle />
         </div>
-      </header>
-      <Suspense fallback={<MobileNav pathname="" />}>
-        <MobileNav />
-      </Suspense>
-    </>
+      </div>
+      {/* The haori check, as a hairline under the header. */}
+      <div aria-hidden="true" className="ichimatsu h-1.5 w-full" style={{ backgroundSize: "6px 6px" }} />
+    </header>
   );
 }

@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -128,58 +128,105 @@
     @apply font-sans;
   }
 }
-/* ---- Hashira Arc theme: warm paper by day, ink by night, ember accent ---- */
+/* ---- Hashira Arc theme: Hinokami Kagura ----
+   Washi paper by day, a moonless night by night. Flame (ember to sun) is the
+   accent, haori green marks what is finished, and the green-and-black ichimatsu
+   check appears only as thin bands. Everything is drawn in CSS and SVG. */
 
 @theme inline {
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-ember: var(--ember);
+  --color-sun: var(--sun);
+  --color-haori: var(--haori);
+  --color-ink: var(--ink);
+
+  --animate-ignite: ignite 0.45s ease-out;
+  --animate-flicker: flicker 2.4s ease-in-out infinite;
+  --animate-sun-turn: sun-turn 90s linear infinite;
+
+  @keyframes ignite {
+    0% {
+      transform: scale(0.7);
+      box-shadow: 0 0 0 0 color-mix(in oklch, var(--sun) 80%, transparent);
+    }
+    55% {
+      transform: scale(1.18);
+      box-shadow: 0 0 0 7px color-mix(in oklch, var(--ember) 0%, transparent);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 transparent;
+    }
+  }
+  @keyframes flicker {
+    0%,
+    100% {
+      opacity: 0.85;
+      transform: scaleY(1) translateY(0);
+    }
+    50% {
+      opacity: 1;
+      transform: scaleY(1.12) translateY(-2%);
+    }
+  }
+  @keyframes sun-turn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 }
 
 :root {
-  --background: oklch(0.985 0.004 85);
-  --foreground: oklch(0.2 0.012 280);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.012 280);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.012 280);
-  --primary: oklch(0.6 0.2 35);
-  --primary-foreground: oklch(0.99 0.01 80);
-  --secondary: oklch(0.955 0.006 85);
-  --secondary-foreground: oklch(0.25 0.012 280);
-  --muted: oklch(0.955 0.006 85);
-  --muted-foreground: oklch(0.5 0.012 280);
-  --accent: oklch(0.955 0.006 85);
-  --accent-foreground: oklch(0.25 0.012 280);
-  --border: oklch(0.91 0.006 85);
-  --input: oklch(0.91 0.006 85);
-  --ring: oklch(0.6 0.2 35);
-  --ember: oklch(0.6 0.2 35);
-  --success: oklch(0.58 0.14 158);
+  --background: oklch(0.975 0.012 85);
+  --foreground: oklch(0.21 0.02 45);
+  --card: oklch(0.995 0.005 85);
+  --card-foreground: oklch(0.21 0.02 45);
+  --popover: oklch(0.995 0.005 85);
+  --popover-foreground: oklch(0.21 0.02 45);
+  --primary: oklch(0.56 0.2 33);
+  --primary-foreground: oklch(0.99 0.01 85);
+  --secondary: oklch(0.945 0.014 85);
+  --secondary-foreground: oklch(0.26 0.02 45);
+  --muted: oklch(0.945 0.014 85);
+  --muted-foreground: oklch(0.47 0.02 55);
+  --accent: oklch(0.945 0.014 85);
+  --accent-foreground: oklch(0.26 0.02 45);
+  --border: oklch(0.89 0.016 80);
+  --input: oklch(0.89 0.016 80);
+  --ring: oklch(0.56 0.2 33);
+  --ember: oklch(0.56 0.2 33);
+  --sun: oklch(0.8 0.16 80);
+  --haori: oklch(0.5 0.11 160);
+  --ink: oklch(0.2 0.015 160);
+  --success: var(--haori);
   --warning: oklch(0.7 0.15 70);
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: oklch(0.155 0.008 280);
-  --foreground: oklch(0.96 0.005 85);
-  --card: oklch(0.195 0.01 280);
-  --card-foreground: oklch(0.96 0.005 85);
-  --popover: oklch(0.215 0.011 280);
-  --popover-foreground: oklch(0.96 0.005 85);
+  --background: oklch(0.155 0.01 275);
+  --foreground: oklch(0.95 0.01 85);
+  --card: oklch(0.195 0.012 275);
+  --card-foreground: oklch(0.95 0.01 85);
+  --popover: oklch(0.215 0.013 275);
+  --popover-foreground: oklch(0.95 0.01 85);
   --primary: oklch(0.72 0.17 42);
   --primary-foreground: oklch(0.17 0.02 40);
-  --secondary: oklch(0.25 0.011 280);
-  --secondary-foreground: oklch(0.96 0.005 85);
-  --muted: oklch(0.25 0.011 280);
-  --muted-foreground: oklch(0.7 0.012 280);
-  --accent: oklch(0.25 0.011 280);
-  --accent-foreground: oklch(0.96 0.005 85);
+  --secondary: oklch(0.25 0.013 275);
+  --secondary-foreground: oklch(0.95 0.01 85);
+  --muted: oklch(0.25 0.013 275);
+  --muted-foreground: oklch(0.72 0.015 80);
+  --accent: oklch(0.25 0.013 275);
+  --accent-foreground: oklch(0.95 0.01 85);
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.72 0.17 42);
   --ember: oklch(0.72 0.17 42);
-  --success: oklch(0.74 0.15 160);
+  --sun: oklch(0.84 0.15 85);
+  --haori: oklch(0.72 0.13 160);
+  --ink: oklch(0.1 0.01 160);
+  --success: var(--haori);
   --warning: oklch(0.8 0.14 78);
 }
 
@@ -191,6 +238,13 @@
   body {
     font-feature-settings: "ss01", "cv11";
     text-rendering: optimizeLegibility;
+    /* A low sun behind the header. */
+    background-image: radial-gradient(
+      56rem 26rem at 50% -12rem,
+      color-mix(in oklch, var(--ember) 16%, transparent),
+      transparent 72%
+    );
+    background-repeat: no-repeat;
   }
   ::selection {
     background: color-mix(in oklch, var(--ember) 30%, transparent);
@@ -201,11 +255,30 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The green-and-black check, for thin decorative bands only. */
+@utility ichimatsu {
+  background-image: conic-gradient(var(--haori) 25%, var(--ink) 0 50%, var(--haori) 0 75%, var(--ink) 0);
+  background-size: 12px 12px;
+}
+
+/* Ember to sun, for progress fills and marks. */
+@utility flame-fill {
+  background-image: linear-gradient(90deg, var(--ember), var(--sun));
+}
+
+@utility flame-text {
+  background-image: linear-gradient(100deg, var(--ember), var(--sun));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }

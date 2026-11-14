@@ -1,18 +1,9 @@
 import { cn } from "@/lib/utils";
 
-/** A slim progress bar. `value` is 0-1. */
-export function ProgressBar({
-  value,
-  label,
-  className,
-  tone = "ember",
-}: {
-  value: number;
-  label: string;
-  className?: string;
-  tone?: "ember" | "success";
-}) {
+/** A slim progress bar that burns from ember to sun, and turns haori green when complete. `value` is 0-1. */
+export function ProgressBar({ value, label, className }: { value: number; label: string; className?: string }) {
   const pct = Math.round(Math.min(1, Math.max(0, value)) * 100);
+  const complete = pct >= 100;
   return (
     <div
       role="progressbar"
@@ -25,7 +16,7 @@ export function ProgressBar({
       <div
         className={cn(
           "h-full rounded-full transition-[width] duration-500 ease-out",
-          tone === "ember" ? "bg-linear-to-r from-ember/70 to-ember" : "bg-success",
+          complete ? "bg-haori" : "flame-fill",
         )}
         style={{ width: `${pct}%` }}
       />
