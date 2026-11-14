@@ -1,18 +1,26 @@
 # Hashira Arc
 
-A 52-week systems engineering roadmap, built as a personal tracker. It takes a fullstack engineer from the Linux shell
-through processes, memory, storage, networking, containers, Firecracker microVMs, databases, distributed systems,
-reliability, Kubernetes, inference serving and realtime voice, with three capstone projects along the way.
+The senior engineer sheet: a nested checklist of everything a top 1% systems engineer can explain, from first
+principles. It works like a DSA sheet, but for systems. Sixteen subjects ("forms") are broken into topics, topics into
+subtopics, and hard rows into smaller rows, so that when every box in a form is ticked you understand that subject.
 
-"Hashira" means pillar: the nine core subjects are shown as pillars that fill as you finish their work.
+It runs from the Linux shell through processes, runtimes, memory, storage, networking, containers, Firecracker microVMs,
+databases, distributed systems, reliability, Kubernetes, inference serving and realtime voice, with two capstone builds
+along the way.
+
+"Hashira" means pillar. Each form is a pillar that fills as you tick its rows and stands when the form is complete.
+Your overall progress climbs the ten corps ranks, Mizunoto to Kinoe, and reaches Hashira at 100%.
 
 ## What it does
 
-- **Roadmap**: 18 phases, 47 modules and 228 items (readings with exact chapters, labs, projects), about 1,210 hours.
-- **Progress**: mark each item to do, in progress, done or skipped.
-- **Lab evidence**: every lab lists the proof to capture. Attach notes, pasted terminal output or links.
-- **Review**: 313 quiz cards on a spaced-repetition schedule. Cards unlock when you start their module, a few per day.
-- **Hours**: log study time against a weekly target; see your streak and whether you are ahead of or behind the plan.
+- **The sheet**: every form, with its progress, on one page. Open a form to work through it.
+- **Rows**: each row is one thing to understand (a concept) or one thing to make (a build, marked with a hammer).
+  Open a row to see what "done" means, where to learn it, and the proof to produce for a build.
+- **Checkboxes**: tick a row when you could teach it. Ticking a topic or subtopic ticks everything beneath it, with
+  an Undo. Every level shows how many of its rows are done.
+- **Stars and notes**: star a row to come back to it, and keep a private note on any row.
+- **Filters**: show everything, only what is left to do, or only starred rows. Expand or collapse all groups; the app
+  remembers which groups you left open.
 
 There is no login. It is a single-user app: **do not deploy it publicly as it is**, because anyone with the URL could
 change your data. To put it online, add authentication first (the Supabase auth helpers in `utils/supabase` and
@@ -27,11 +35,15 @@ bun install
 cp .env.example .env.local   # then fill in the three values
 ```
 
-Apply the database schema once. It creates six tables with row level security on and no public access:
+Apply the database schema once:
 
 ```bash
 supabase db push --db-url "<your DATABASE_URL>"
 ```
+
+This runs every file in `supabase/migrations` that has not been applied yet. On a fresh database that leaves a single
+table, `sheet_state`, with row level security on and no public access. If you used the earlier 52-week tracker, note
+that `…_drop_tracker_tables.sql` **deletes its tables and all their data**.
 
 Then run it:
 
@@ -39,7 +51,7 @@ Then run it:
 bun dev --port 3210
 ```
 
-Open <http://localhost:3210> and press **Start week 1 today**.
+Open <http://localhost:3210>.
 
 If the app cannot reach the database, your network may not support IPv6, which Supabase's direct connection host
 requires. Replace `DATABASE_URL` with the **session pooler** connection string from the Supabase dashboard
@@ -50,47 +62,78 @@ requires. Replace `DATABASE_URL` with the **session pooler** connection string f
 | Command | What it does |
 |---|---|
 | `bun dev` | Development server |
-| `bun run build` | Production build. Needs no database: pages prerender their curriculum and stream your data in |
-| `bun test` | Unit tests: curriculum validation, scheduler, review queue, pace and date math |
+| `bun run build` | Production build. Needs no database: pages prerender the sheet and stream your ticks in |
+| `bun test` | Unit tests: sheet validation, progress roll-up, ranks, the write queue |
 | `bun run typecheck` | Type generation and `tsc` |
 | `bun lint` | ESLint |
+| `bun scripts/validate-section.ts <file>` | Validate one section file and print its size |
 | `bun scripts/check-links.ts` | Request every resource link and report dead ones |
-| `bun scripts/check-orphans.ts` | Find database rows whose item or card ID no longer exists in the curriculum |
+| `bun scripts/check-orphans.ts` | Find saved rows whose ID no longer exists in the sheet |
 
 ## How it is built
 
-- **Curriculum is code, your state is data.** Everything under `content/` is typed TypeScript with stable IDs.
-  The database holds only progress, evidence, time logs and card schedules.
+- **The sheet is code, your state is data.** Everything under `content/` is typed TypeScript with stable IDs.
+  The database holds one row per checklist row you have ticked, starred or written a note on.
+- **Only leaves are stored.** A row with nothing beneath it has a checkbox. Every topic's and form's progress is
+  computed from the rows under it, so the numbers can never disagree.
 - **Server-only database access** (`lib/db`) through `DATABASE_URL` with the `postgres` driver. The public Supabase key
   can read and write nothing.
-- **One query per page.** `lib/db/snapshot.ts` fetches the whole of your state in a single round trip, because the
-  database may be hundreds of milliseconds away.
-- **Next.js 16 with Cache Components.** Curriculum markup is the static shell; your state streams in under `<Suspense>`.
-  Mutations are Server Functions in `lib/actions` with optimistic UI.
-- **Pure logic is tested.** `lib/srs.ts` (SM-2 style scheduler), `lib/review-queue.ts`, `lib/schedule.ts` and
-  `lib/dates.ts` have no I/O.
+- **One query per page.** `lib/db/sheet.ts` fetches your state in a single round trip, because the database may be
+  hundreds of milliseconds away.
+- **Next.js 16 with Cache Components.** The sheet's structure is the static shell; your ticks stream in under
+  `<Suspense>`. Mutations are Server Functions in `lib/actions` with optimistic UI, and quick bursts of ticks are
+  merged into one request (`lib/sheet/write-queue.ts`).
+- **Pure logic is tested.** Everything in `lib/sheet` except the localStorage hook has no I/O.
 
 ```
-app/          routes: dashboard, roadmap, item detail, review, hours, settings
-components/   UI, grouped by page
-content/      the curriculum: phases/, types, validator
-lib/actions/  server functions (mutations)
-lib/db/       server-only reads
-lib/          pure scheduling and date logic, with tests
-supabase/     the schema migration
-scripts/      link and orphan checks
+app/              routes: the sheet (/) and one form (/sheet/[sectionId])
+components/sheet/ the overview, the checklist tree, rows, and the sun, rank and pillar motifs
+content/          the sheet: sections/, the DSL, types, validator
+lib/actions/      server functions (mutations)
+lib/db/           server-only reads
+lib/sheet/        pure tree, state, rank and queue logic, with tests
+supabase/         the schema migrations
+scripts/          section, link and orphan checks
 ```
 
-## Editing the curriculum
+## Editing the sheet
 
-Edit the files in `content/phases/`. Then run `bun test`: the validator checks that IDs are unique, every week from 1 to
-52 has work, weekly hours stay within budget, and links are well formed.
+Each form is one file in `content/sections/`, written with four helpers from `content/dsl.ts`:
 
-Two rules keep your saved progress attached to the right things:
+```ts
+export default section("networking", { title: "Networking", summary: "…" }, [
+  topic("tcp", "Sockets and TCP", [
+    topic("lifecycle", "Connection lifecycle", [
+      concept("handshake", "The three-way handshake", undefined, {
+        parts: [
+          concept("steps", "SYN, SYN-ACK, ACK", "What you can explain once this is ticked."),
+          concept("isn", "Why initial sequence numbers are unpredictable", "…"),
+        ],
+      }),
+    ]),
+    topic("build", "Build it", [
+      build("tcp-go", "A TCP server and client", "The brief.", { doneWhen: ["An annotated capture"] }),
+    ]),
+  ]),
+]);
+```
 
-- **Never rename an item, module or phase ID** once you have progress on it. If you must, add the old ID to
-  `retiredIds` in `content/index.ts` so it is never reused, and run `bun scripts/check-orphans.ts`.
-- **Add new quiz cards at the end of a module's list.** Card IDs come from the module ID and position.
+- `topic()` groups rows. `concept()` is something to understand, `build()` something to make. Give a hard row `parts`
+  to split it into smaller rows.
+- Every row you can tick needs a `detail` saying what done means.
+- A row's ID is the path of local IDs from its section down: `networking.tcp.lifecycle.handshake.steps`.
+
+Add a new section to the list in `content/index.ts`, then run `bun test`. The validator checks IDs, nesting depth,
+that every tickable row has a detail, and that links are well formed.
+
+**Never rename or move a row once you have ticked it.** Its ID is its path, and your saved tick is keyed by that ID.
+If you must, run `bun scripts/check-orphans.ts` afterwards to find the ticks that were left behind.
+
+## The theme
+
+The look follows the Hinokami Kagura: flame from ember to sun for progress, haori green for what is finished, and the
+green-and-black ichimatsu check as thin bands. It is drawn entirely in CSS and SVG in `app/globals.css` and
+`components/sheet/motifs.tsx`; the app ships no artwork.
 
 ## Agent skills
 

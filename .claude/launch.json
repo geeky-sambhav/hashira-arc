@@ -4,8 +4,24 @@
     {
       "name": "hashira-arc",
       "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "dev", "--port", "3210"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--port",
+        "3210"
+      ],
       "port": 3210
+    },
+    {
+      "name": "hashira-arc-prod",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "start",
+        "--port",
+        "3212"
+      ],
+      "port": 3212
     }
   ]
 }
