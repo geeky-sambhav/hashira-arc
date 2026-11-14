@@ -1,102 +1,104 @@
-import type {
-  EvidenceKind,
-  EvidenceSpec,
-  LabItem,
-  ProjectItem,
-  QuizCard,
-  ReadingItem,
-  ResourceLink,
-} from "./types";
+import type { NodeKind, ResourceLink, Section, SheetNode } from "./types";
 
-/** Small constructors that keep the curriculum files compact. */
+/** Small constructors that keep the section files compact. */
 
 export const link = (label: string, url: string): ResourceLink => ({ label, url });
 export const paid = (label: string, url: string): ResourceLink => ({ label, url, paid: true });
 
-const ev =
-  (kind: EvidenceKind) =>
-  (id: string, label: string): EvidenceSpec => ({ id, label, kind });
-export const output = ev("output");
-export const note = ev("note");
-export const url = ev("link");
+/** A node as authored: a local ID, resolved to a full dotted ID by `section()`. */
+export interface NodeSpec {
+  local: string;
+  title: string;
+  kind: NodeKind;
+  detail?: string;
+  doneWhen?: readonly string[];
+  links?: readonly ResourceLink[];
+  children?: readonly NodeSpec[];
+}
 
-interface Common {
-  week: number;
-  hours: number;
-  optional?: boolean;
+interface GroupOptions {
+  /** One line on what the group covers. */
+  detail?: string;
+  /** Where to learn everything in the group. */
   links?: readonly ResourceLink[];
 }
 
-export function read(
-  id: string,
-  title: string,
-  o: Common & { source: string; chapters?: string },
-): ReadingItem {
+interface RowOptions {
+  links?: readonly ResourceLink[];
+  /** Break a hard row into checkable sub-rows. The row itself then has no checkbox. */
+  parts?: readonly NodeSpec[];
+}
+
+interface BuildOptions extends RowOptions {
+  /** The observable proof that the build works. */
+  doneWhen?: readonly string[];
+}
+
+/** A group of rows: a topic, a subtopic, or a "Build it" list. */
+export function topic(id: string, title: string, children: readonly NodeSpec[], o: GroupOptions = {}): NodeSpec {
   return {
-    kind: "reading",
-    id,
+    local: id,
     title,
-    week: o.week,
-    estHours: o.hours,
-    source: o.source,
-    ...(o.chapters ? { chapters: o.chapters } : {}),
-    ...(o.optional ? { optional: true } : {}),
-    ...(o.links ? { links: o.links } : {}),
+    kind: "topic",
+    children,
+    ...(o.detail ? { detail: o.detail } : {}),
+    ...(o.links?.length ? { links: o.links } : {}),
   };
 }
 
-export function lab(
-  id: string,
-  title: string,
-  o: Common & { brief: string; evidence: readonly EvidenceSpec[] },
-): LabItem {
+/** Something to understand. `detail` says what you can explain once it is ticked. */
+export function concept(id: string, title: string, detail?: string, o: RowOptions = {}): NodeSpec {
   return {
-    kind: "lab",
-    id,
+    local: id,
     title,
-    week: o.week,
-    estHours: o.hours,
-    brief: o.brief,
-    evidence: o.evidence,
-    ...(o.optional ? { optional: true } : {}),
-    ...(o.links ? { links: o.links } : {}),
+    kind: "concept",
+    ...(detail ? { detail } : {}),
+    ...(o.links?.length ? { links: o.links } : {}),
+    ...(o.parts?.length ? { children: o.parts } : {}),
   };
 }
 
-export function project(
-  id: string,
-  title: string,
-  o: Common & {
-    brief: string;
-    deliverables: readonly string[];
-    evidence: readonly EvidenceSpec[];
-    capstone?: boolean;
-  },
-): ProjectItem {
+/** Something to make or break with your own hands. `detail` is the brief. */
+export function build(id: string, title: string, detail: string, o: BuildOptions = {}): NodeSpec {
   return {
-    kind: "project",
-    id,
+    local: id,
     title,
-    week: o.week,
-    estHours: o.hours,
-    brief: o.brief,
-    deliverables: o.deliverables,
-    evidence: o.evidence,
-    ...(o.capstone ? { capstone: true } : {}),
-    ...(o.optional ? { optional: true } : {}),
-    ...(o.links ? { links: o.links } : {}),
+    kind: "build",
+    detail,
+    ...(o.doneWhen?.length ? { doneWhen: o.doneWhen } : {}),
+    ...(o.links?.length ? { links: o.links } : {}),
+    ...(o.parts?.length ? { children: o.parts } : {}),
   };
 }
 
-/**
- * Build the quiz cards for one module. IDs are derived from the module ID and
- * position, so append new cards at the end and never reorder existing ones.
- */
-export function cards(moduleId: string, pairs: readonly (readonly [string, string])[]): QuizCard[] {
-  return pairs.map(([question, answer], i) => ({
-    id: `${moduleId}-q${i + 1}`,
-    moduleId,
-    question,
-    answer,
-  }));
+function resolve(spec: NodeSpec, parentId: string): SheetNode {
+  const id = `${parentId}.${spec.local}`;
+  const children = spec.children?.map((child) => resolve(child, id));
+  return {
+    id,
+    title: spec.title,
+    kind: spec.kind,
+    ...(spec.detail ? { detail: spec.detail } : {}),
+    ...(spec.doneWhen ? { doneWhen: spec.doneWhen } : {}),
+    ...(spec.links ? { links: spec.links } : {}),
+    ...(children?.length ? { children } : {}),
+    leaves: children?.length ? children.reduce((n, c) => n + c.leaves, 0) : 1,
+  };
+}
+
+/** One subject of the sheet. Resolves every node's full ID and leaf count. */
+export function section(
+  id: string,
+  meta: { title: string; summary: string; capstone?: boolean },
+  children: readonly NodeSpec[],
+): Section {
+  const resolved = children.map((child) => resolve(child, id));
+  return {
+    id,
+    title: meta.title,
+    summary: meta.summary,
+    ...(meta.capstone ? { capstone: true } : {}),
+    children: resolved,
+    leaves: resolved.reduce((n, c) => n + c.leaves, 0),
+  };
 }

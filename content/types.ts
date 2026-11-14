@@ -1,22 +1,11 @@
-export const ITEM_STATUSES = ["todo", "doing", "done", "skipped"] as const;
-export type ItemStatus = (typeof ITEM_STATUSES)[number];
+/**
+ * The sheet is a tree: Section -> topics -> subtopics -> rows -> sub-rows.
+ * Only leaves (nodes without children) carry a checkbox; every parent's
+ * progress is computed from the leaves beneath it.
+ */
 
-export const EVIDENCE_KINDS = ["note", "output", "link"] as const;
-export type EvidenceKind = (typeof EVIDENCE_KINDS)[number];
-
-/** The nine core subjects, shown as pillars on the dashboard. */
-export const PILLARS = [
-  { id: "os", label: "Processes & OS" },
-  { id: "runtimes", label: "Runtimes" },
-  { id: "memory", label: "Memory" },
-  { id: "storage", label: "Storage" },
-  { id: "networking", label: "Networking" },
-  { id: "isolation", label: "Isolation" },
-  { id: "data", label: "Data systems" },
-  { id: "distributed", label: "Distributed" },
-  { id: "reliability", label: "Reliability" },
-] as const;
-export type PillarId = (typeof PILLARS)[number]["id"];
+/** `topic` groups rows, `concept` is something to understand, `build` is something to make. */
+export type NodeKind = "topic" | "concept" | "build";
 
 export interface ResourceLink {
   label: string;
@@ -25,90 +14,40 @@ export interface ResourceLink {
   paid?: boolean;
 }
 
-/** One piece of proof a lab asks you to capture. */
-export interface EvidenceSpec {
-  id: string;
-  label: string;
-  kind: EvidenceKind;
-}
-
-interface ItemBase {
-  /** Globally unique, kebab-case, never renamed once progress exists for it. */
+export interface SheetNode {
+  /** Dotted path from the section down, e.g. "networking.tcp.lifecycle.handshake". Never renamed once ticked. */
   id: string;
   title: string;
-  /** Planned week, 1-based, inside the phase's week range. */
-  week: number;
-  /** Estimated hours, a positive multiple of 0.25. */
-  estHours: number;
-  /** Optional items are excluded from pace math. */
-  optional?: boolean;
+  kind: NodeKind;
+  /** For a leaf: what you can explain or show once it is ticked. For a group: what it covers. */
+  detail?: string;
+  /** Builds only: the observable proof that it works. */
+  doneWhen?: readonly string[];
+  /** Where to learn it. */
   links?: readonly ResourceLink[];
+  /** Present and non-empty on groups. A node with children has no checkbox of its own. */
+  children?: readonly SheetNode[];
+  /** Number of leaves at or below this node (1 for a leaf). */
+  leaves: number;
 }
 
-export interface ReadingItem extends ItemBase {
-  kind: "reading";
-  /** What to read or watch, e.g. "OSTEP" or "MIT 6.5840 lecture". */
-  source: string;
-  /** Chapter or section range, e.g. "ch. 4-6". */
-  chapters?: string;
-}
-
-export interface LabItem extends ItemBase {
-  kind: "lab";
-  /** One or two sentences: what to build or break. */
-  brief: string;
-  evidence: readonly EvidenceSpec[];
-}
-
-export interface ProjectItem extends ItemBase {
-  kind: "project";
-  capstone?: boolean;
-  brief: string;
-  deliverables: readonly string[];
-  evidence: readonly EvidenceSpec[];
-}
-
-export type Item = ReadingItem | LabItem | ProjectItem;
-export type ItemKind = Item["kind"];
-
-export interface Module {
+export interface Section {
   id: string;
-  title: string;
-  summary?: string;
-  items: readonly Item[];
-}
-
-export interface Phase {
-  id: string;
-  /** Display label such as "Phase 3", "Capstone 1" or "Buffer". */
-  label: string;
   title: string;
   summary: string;
-  /** Inclusive week range. */
-  weeks: { start: number; end: number };
-  pillar?: PillarId;
-  /** Buffer phases may have weeks with no required hours. */
-  buffer?: boolean;
   capstone?: boolean;
-  modules: readonly Module[];
+  children: readonly SheetNode[];
+  leaves: number;
 }
 
-export interface QuizCard {
-  id: string;
-  moduleId: string;
-  question: string;
-  answer: string;
-}
+/** One dot-separated part of an ID. */
+export const SEGMENT_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+export const SEGMENT_MAX_LENGTH = 24;
+/** Section + five levels below it. */
+export const MAX_DEPTH = 6;
+/** Shared with the CHECK constraint on sheet_state.node_id. */
+export const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*)*$/;
+export const ID_MAX_LENGTH = 128;
 
-export interface Curriculum {
-  totalWeeks: number;
-  weeklyHoursBudget: number;
-  phases: readonly Phase[];
-  cards: readonly QuizCard[];
-  /** IDs that were used once and must never be reused. */
-  retiredIds: readonly string[];
-}
-
-/** Shared with the database CHECK constraints. */
-export const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-export const ID_MAX_LENGTH = 80;
+export const TITLE_MAX_LENGTH = 110;
+export const DETAIL_MAX_LENGTH = 700;
